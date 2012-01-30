@@ -1,25 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-#       turn.py
+#   turn.py
 #
-#       Copyright 2012 Reid McKenzie <rmckenzie92@gmail.com>
-#
-#       This program is free software; you can redistribute it and/or modify
-#       it under the terms of the GNU General Public License as published by
-#       the Free Software Foundation; either version 2 of the License, or
-#       (at your option) any later version.
-#
-#       This program is distributed in the hope that it will be useful,
-#       but WITHOUT ANY WARRANTY; without even the implied warranty of
-#       MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#       GNU General Public License for more details.
-#
-#       You should have received a copy of the GNU General Public License
-#       along with this program; if not, write to the Free Software
-#       Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-#       MA 02110-1301, USA.
-#
+#   Copyright 2011 Reid McKenzie <rmckenzie92@gmail.com>
+#   This code and all other code in the project may be used
+#   or re-used for any purpose at all, so long as I am
+#   made aware of my contribution.
 
 from .signal import Signal
 
@@ -33,12 +20,18 @@ class Turn(Signal):
         Signal.__init__(player)
         self.player = player
 
+    def __str__(self):
+        return "Turn generic signal"
+
 class Untap(Turn):
     """
     This class serves to signal the untap step of a player's turn
     """
     def __init__(self, player):
         Turn.__init__(player)
+
+    def __str__(self):
+        return "Untap phase signal"
 
 class Upkeep(Turn):
     """
@@ -47,12 +40,18 @@ class Upkeep(Turn):
     def __init__(self, player):
         Turn.__init__(player)
 
+    def __str__(self):
+        return "Upkeep phase signal"
+
 class Main(Turn):
     """
     This class serves to signal a player's main step (not needed?)
     """
     def __init__(self, player):
         Turn.__init__(player)
+
+    def __str__(self):
+        return "Main phase signal"
 
 class Attack(Turn):
     """
@@ -62,12 +61,18 @@ class Attack(Turn):
     def __init__(self, player):
         Turn.__init__(player)
 
+    def __str__(self):
+        return "Attack phase signal"
+
 class Block(Turn):
     """
     This class serves to signal a player's declaration of blockers.
     """
     def __init__(self, player):
         Turn.__init__(player)
+
+    def __str__(self):
+        return "Blocking phase signal"
 
 class End(Turn):
     """
@@ -76,9 +81,15 @@ class End(Turn):
     def __init__(self, player):
         Turn.__init__(player)
 
+    def __str__(self):
+        return "End phase signal"
+
 class EndPhase(Turn):
     """
     This class serves to signal the end of a player's phase.
     """
     def __init__(self, player):
         Turn.__init__(player)
+
+    def __str__(self):
+        return "End of phase signal"
