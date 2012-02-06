@@ -8,10 +8,10 @@
 #   or re-used for any purpose at all, so long as I am
 #   made aware of my contribution.
 
-from lib.game import GameInstance as GI
-from lib.player import Player
+from lib.game           import GameInstance as GI
+from lib.player.player  import Player
 
 if __name__ == "__main__" or 1:
     game = GI()
-    p = Player([], "me")
+    p = Player(game, [], "me")
     game.addPlayer(p)

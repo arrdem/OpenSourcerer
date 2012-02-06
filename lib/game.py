@@ -10,9 +10,10 @@
 
 import random
 
-from .client.client import *
+from .client        import *
 from .signal.signal import *
 from .signal.turn   import *
+from .player.player import Player
 #TODO add a Player class
 
 class GameInstance(Client):
@@ -60,14 +61,14 @@ class GameInstance(Client):
 
     def addPlayer(self, p):
         if(isinstance(p, Player)):
-            players.append(p)
-            signal_clients.append(p)
+            self.players.append(p)
+            self.signal_clients.append(p)
         else:
             raise TypeError("Can only add players or subclasses thereof")
 
     def addClient(self, c):
         if(isinstance(c, Client)):
-            signal_clients.append(c)
+            self.signal_clients.append(c)
         else:
             raise TypeError("Only clients or subclasses of client can be added")
 
