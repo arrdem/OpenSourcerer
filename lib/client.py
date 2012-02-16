@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-#  client.py
+#   client.py
 #
 #   Copyright 2011 Reid McKenzie <rmckenzie92@gmail.com>
 #   This code and all other code in the project may be used
@@ -20,8 +20,6 @@ class Client(object):
         self.__gameinstance__ = gi
 
     def __handle__(self, sig):
-        # this method is GURANTEED to recieve a signal, and is to be overridden
-        # in every subclass.
         pass
 
     def signal(self, sig):

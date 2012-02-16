@@ -11,7 +11,7 @@
 import random
 from ..client import Client
 
-class Player(object, Client):
+class Player(Client):
     deck        = []
     hand        = []
     permanents  = []
@@ -35,7 +35,7 @@ class Player(object, Client):
         self.hand   = []
 
         random.shuffle(self.deck)
-        self.draw(n=7)
+        #self.draw(n=7)
 
     def __handle__(self, sig):
         """
