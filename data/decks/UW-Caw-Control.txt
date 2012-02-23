@@ -5,7 +5,7 @@
 1 Hallowed Fountain
 3 Island
 1 Marsh Flats
-2 Misty Rainforest
+2 Misty Rainforrest
 1 Moorland Haunt
 2 Mystic Gate
 1 Pendelhaven
