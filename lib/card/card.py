@@ -65,7 +65,7 @@ class Card(Client):
         return
 
     def __add_handler_method__(self, sig, handler):
-        __hanlers__[sig.__class__] = setattr(self,
+        self.__hanlers__[sig.__class__] = setattr(self,
                                              func.__name__,
                                              types.MethodType(handler, self)
                                             )

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
 #   Event.py
@@ -9,14 +9,18 @@
 #   made aware of my contribution.
 
 from .signal import Signal
+from ..player.player import Player
+from ..typedfunction import *
 
 class Event(Signal):
     """
     events serve to signal things like damage being dealt, spells cast,
     effects resolving, land tapped, cards drawn etc.
     """
+    @argtypes(Signal,  Player)
     def __init__(self, source):
         Signal.__init__(self, source)
+
 
 class Draw(Event):
     cards   = None
@@ -24,9 +28,12 @@ class Draw(Event):
     This class serves to signal a player drawing cards.
     cards is the number of cards drawn.
     """
+
+    @argtypes(Signal,  Player,  list)
     def __init__(self, player, cards):
         Event.__init__(self, player)
         self.cards = cards
+
 
 class Discard(Event):
     cards   = None
@@ -34,9 +41,12 @@ class Discard(Event):
     This class serves to signal a player discarding cards.
     cards is the number of cards discarded.
     """
+
+    @argtypes(Signal,  Player,  list)
     def __init__(self, player, cards):
         Event.__init__(self, player)
         self.cards = cards
+
 
 class Exile(Event):
     target  = None
@@ -45,9 +55,12 @@ class Exile(Event):
     Target is the exiled card.
     Source is the card causing the exiling.
     """
+    
+    @argtypes(Signal,  Player,  list)
     def __init__(self, source, target):
         Event.__init__(self, source)
         self.source = source
+
 
 class Destroy(Event):
     target  = None
@@ -58,9 +71,12 @@ class Destroy(Event):
     Target is the permanent to be destroyed
     Source is the card/ability doing the destruction
     """
+
+    @argtypes(Signal,  Player,  list)
     def __init__(self, source, target):
         Event.__init__(self, source)
         self.source = source
+
 
 class Cast(Event):
     target  = None
@@ -72,22 +88,28 @@ class Cast(Event):
     Target is the target of the spell
     spell  is the instance of the spell being applied
     """
+
+    @argtypes(Event,  Player,  ,  )
     def __init__(self, source, target, spell):
         Event.__init__(self, source)
         self.target = target
         self.spell  = spell
 
+
 class Instant(Cast):
     """
     Special case of a castable which can happen at any time
     """
+
     def __init__(self, source, target, spell):
         cast.__init__(self, source, target, spell)
+
 
 class Ability(Instant):
     """
     Special case of an instant which originates from a creature or artifact
     """
+
     def __init__(self, source, target, spell):
         Instant.__init__(self, source, target, spell)
 
@@ -97,19 +119,24 @@ class Spell(Cast):
     Special case of a cast which has a "normal" (non-interrupt) priority
     TODO/NOTE - may need to note the controlling/source/curr_turn player
     """
+
     def __init__(self, source, target, spell):
         Cast.__init__(self, source, target, spell)
+
 
 class Creature(Spell):
     """
     Special case of a spell which will result in the placement of a creature
     """
+
     def __init__(self, source, target, spell):
         Spell.__init__(self, source, target, spell)
+
 
 class Artifact(Spell):
     """
     Special case of a spell which will result in the placement of an artifact
     """
+
     def __init__(self, source, target, spell):
         Spell.__init__(self, source, target, spell)

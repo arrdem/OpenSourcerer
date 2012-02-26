@@ -23,7 +23,7 @@ if __name__ == "__main__" or 1:
                     cards[s] = int(data[0])
                 for c in cards:
                     for d in cards:
-                        ai.add(c,d,value=cards[d])
+                        ai.add(c, d, value=cards[d])
     else:
         ai.load(open("./ai.conf"))
 
