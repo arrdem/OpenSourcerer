@@ -3,46 +3,34 @@
 #
 #  markovdeck.py
 
-from lib.markov         import MarkovChain as mc
-import os
+from lib.markov.mongo_markov import MongoMarkovChain as mc
+from pymongo.connection import Connection
+from collections import defaultdict as bag
+import cProfile
 
-if __name__ == "__main__" or 1:
+def main():
     path = "./data/decks/"
-    ai = mc()
+    connection = Connection("146.6.213.39")
+    db = connection.magic
+    ai = mc(db, "markov")
 
-    if True:
-        # load the deck data. Yes all of it. In one go. I love Python...
-        for deck in os.listdir(path):
-            with open(path + deck) as f:
-                cards = {}
-                for line in f:
-                    data = line.split(" ")
-                    s = ' '.join(data[1::])
-                    s = s.strip('\n')
-                    s = s.strip('\r')
-                    cards[s] = int(data[0])
-                for c in cards:
-                    for d in cards:
-                        ai.add(c, d, value=cards[d])
-    else:
-        ai.load(open("./ai.conf"))
+    deck = []
 
-    deck = [ai.get() for i in range(60)]
+    for i in range(60):
+        c = ai.get()
+        if(isinstance(c, type(""))):
+            deck.append(c)
+
     deck.sort()
 
-    deck_clean = {}
+    deck_clean = bag(lambda: 0)
 
     for c in deck:
-        if c not in deck_clean:
-            deck_clean[c] = 1
-        else:
-            deck_clean[c] += 1
+        deck_clean[c] += 1
 
-    d2 = []
-    for c in deck:
-        if c not in d2:
-            d2.append(c)
-    d2.sort()
+    for c in set(deck):
+        print ("%2i  %s" % (deck_clean[c], c))
 
-    for c in d2:
-        print deck_clean[c], c
+if __name__ == "__main__":
+    main()
+#    cProfile.run('main()')
