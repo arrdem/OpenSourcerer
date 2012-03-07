@@ -8,9 +8,9 @@
 #   or re-used for any purpose at all, so long as I am
 #   made aware of my contribution.
 from lib.game              import GameInstance as GI
-from lib.player.player   import Player
-from lib.signal.event    import *
-from lib.signal.turn      import *
+from lib.player.player   , import Player
+from lib.signal.event      import *
+from lib.signal.turn       import *
 import re
 
 if __name__ == "__main__" or 1:
@@ -18,7 +18,7 @@ if __name__ == "__main__" or 1:
     for name in dir():
         a = re.match("__", name)
         if a is None:
-            exec("m[name] =" + name)
+                exec("m[name] =" + name)
 
     game = GI()
     p = Player(game, [], "me")
