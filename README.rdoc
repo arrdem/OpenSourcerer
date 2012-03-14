@@ -24,6 +24,16 @@ will also get some attention in the near future but it is very low priority.
  * Scraped Essential Magic, got some preliminary deck statistics
  * Assembled the abstraction layers required for the game engine
 
+== File Overview
+The directly runnable portions of the project are all stored in the root
+directory. There are two client/server pairs here, as well as the prototype
+deck generator. 
+
+ * The client/server pair named "gatherer" is designed to scrape gatherer.wizards.com and retrieve information about every card recorded there.
+ * The client/server pair named essentialmagic scrape essentialmagic.com's deck listings
+ * The deck generator well... does a bad job of generating decks.
+ * The "main.py" file will eventially execute the game engine
+
 == Disclaimer
 This program was hacked together by a college freshman in his spare time. 
 If you use this code for anything important, you are nuts to put it kindly. 
