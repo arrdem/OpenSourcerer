@@ -112,142 +112,146 @@ class Card(Client):
         return {field: getattr(self, field) for field in self.__fields__}
 
     def loadFromGatherer(self, html):
-        html = ''.join([c for c in html if c in string.printable])
-        p = WebPage()
-        p.feed(html)
-        tree = p.__tree_root__
-
-        # limit the syntax tree to the subtree making up the right column
-
-        # first get the easy stuff...
-        ## get the card's name
-        res = next(tree.find(lambda x:'id' in x and x['id'] == 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_nameRow'))
-        res = next(res.find(lambda x: x['class'] == 'value'))
-        self.name = res['data'].strip()
-
-        ## get the card's flavor text
         try:
-            res = next(tree.find(lambda x:'id' in x and x['id'] == 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_FlavorText'))
-            self.flavor_text = res.join().strip()
-        except StopIteration as e:
-            print(e)
-            self.flavor_text = "None"
+            html = ''.join([c for c in html if c in string.printable])
+            p = WebPage()
+            p.feed(html)
+            tree = p.__tree_root__
 
-        ## get the card's core text
-        self.text_divs = []
-        try:
-            res = next(tree.find(lambda x:'id' in x and x['id'] == 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_textRow'))
-            res = res.__children__[1]
-            self.text = ""
-            for c in res.__children__:
-                t = c.__fields__['data'].strip()
-                if t:
-                    self.text += (t + '\n')
-                    self.text_divs.append(t)
-        except StopIteration:
-            self.text = "None"
+            # limit the syntax tree to the subtree making up the right column
 
-        ## get the card's abilities/effects
-        self.actions = []
-
-        res = next(tree.find(lambda x:'id' in x and x['id'] == 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_textRow'))
-        for a in self.text_divs:
-            a = re.sub(r'[\n \t]', ' ', a)
-
-            if (':' in a) or ('when' in a.lower()) or ('if ' in a.lower()) or ('may' in a.lower()):
-                self.actions.append(tuple(map(lambda x: x.strip(), a.split(':'))))
-
-        ## get the card's types
-        res = next(tree.find(lambda x:'id' in x and x['id'] == 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_typeRow'))
-        res = next(res.find(lambda x: x['class'] == 'value'))
-        self.types = [''.join(filter(lambda x:(0 <= ord(x) <= 128), s.strip())) for s in res['data'].split('—')]
-
-        # now for the stuff which needs a little processing...
-        ## get the power and toughness
-        try:
-            res = next(tree.find(lambda x:'id' in x and x['id'] == 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_ptRow'))
+            # first get the easy stuff...
+            ## get the card's name
+            res = next(tree.find(lambda x:'id' in x and x['id'] == 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_nameRow'))
             res = next(res.find(lambda x: x['class'] == 'value'))
-            self.power, self.toughness = (int(s) for s in re.split('[\\/]',res['data'].strip()))
-        except StopIteration:
-            self.power, self.toughness = -1,-1
+            self.name = res['data'].strip()
 
-        ## get the mana cost
-        self.cost = dd(lambda: 0)
-        self.cost['X'] = False
-
-        try:
-            res = next(tree.find(lambda x:'id' in x and x['id'] == 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_manaRow'))
-            res = next(res.find(lambda x: x['class'] == 'value'))
-
-            for child in res.__children__:
-                try:
-                    i = int(child.__fields__['alt'])
-                    self.cost['*'] = i
-                except:
-                    s = child.__fields__['alt']
-                    if " or " in s:
-                        s = (s[0].lower()) + "/" + (s.split(" ")[2][0].lower())
-                    elif "Phyrexian" in s:
-                        s = s.split(' ')[1]
-                        self.cost['Phyrexian'] += 1
-
-                    elif 'Variable Colorless' == s:
-                        self.cost['X'] = True
-                        continue
-
-                    self.cost[s] += 1
-        except StopIteration:
-            pass
-
-        self.cost = {k: self.cost[k] for k in self.cost}
-
-        ## get the converted cost row
-        res = next(tree.find(lambda x:'id' in x and x['id'] == 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_cmcRow'))
-        res = next(res.find(lambda x: x['class'] == 'value'))
-        self.ccost = int(res.__fields__['data'].strip('"').strip())
-
-        ## get the expansion
-        res = next(tree.find(lambda x:'id' in x and x['id'] == "ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_currentSetSymbol"))
-        res = res.__children__[1]
-        self.expansion = res.__fields__['data']
-
-        ## get the rarity
-        res = next(tree.find(lambda x:'id' in x and x['id'] == "ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_rarityRow"))
-        self.rarity = res.__children__[1].__children__[0]['data']
-
-        ## get the rating
-        self.rating = float(
-                       next(
-                        tree.find(
-                         lambda x:'id' in x and x['id'] == 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_currentRating_textRating'))['data'])
-
-        ## get the MUID
-        res = next(tree.find(lambda x:'id' in x and x['id'] == 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_cardImage'))
-        m = re.findall('multiverseid=([0-9]+)', res.__fields__['src'])
-        self.muid = int(m[0])
-
-        ## get the image URL
-        ### a constant string and the MUID
-        self.img = ("http://gatherer.wizards.com/Handlers/Image.ashx?multiverseid=%i&type=card" % self.muid)
-
-        self.keywords = [ k for k in self.__keywords__ if k.lower() in self.text.lower()]
-
-
-
-def test():
-    from .cardtestdata import __test_html__
-    for html in __test_html__:
-        c = Card(None)
-        c.loadFromGatherer(html)
-        for k in c.__fields__:
+            ## get the card's flavor text
             try:
-                print(k, getattr(c, k))
+                res = next(tree.find(lambda x:'id' in x and x['id'] == 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_FlavorText'))
+                self.flavor_text = res.join().strip()
+            except StopIteration as e:
+                print(e)
+                self.flavor_text = "None"
 
-            except Exception as e:
-                print(k, e)
-                continue
+            ## get the card's core text
+            self.text_divs = []
+            try:
+                res = next(tree.find(lambda x:'id' in x and x['id'] == 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_textRow'))
+                res = res.__children__[1]
+                self.text = ""
+                for c in res.__children__:
+                    t = c.__fields__['data'].strip()
+                    if t:
+                        self.text += (t + '\n')
+                        self.text_divs.append(t)
+            except StopIteration:
+                self.text = "None"
 
-        print(c.export())
-    return
+            ## get the card's abilities/effects
+            self.actions = []
 
-test()
+            res = next(tree.find(lambda x:'id' in x and x['id'] == 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_textRow'))
+            for a in self.text_divs:
+                a = re.sub(r'[\n \t]', ' ', a)
+
+                if (':' in a) or ('when' in a.lower()) or ('if ' in a.lower()) or ('may' in a.lower()):
+                    self.actions.append(tuple(map(lambda x: x.strip(), a.split(':'))))
+
+            ## get the card's types
+            res = next(tree.find(lambda x:'id' in x and x['id'] == 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_typeRow'))
+            res = next(res.find(lambda x: x['class'] == 'value'))
+            self.types = [''.join(filter(lambda x:(0 <= ord(x) <= 128), s.strip())) for s in res['data'].split('—')]
+
+            # now for the stuff which needs a little processing...
+            ## get the power and toughness
+            try:
+                res = next(tree.find(lambda x:'id' in x and x['id'] == 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_ptRow'))
+                res = next(res.find(lambda x: x['class'] == 'value'))
+                self.power, self.toughness = (int(s) for s in re.split('[\\/]',res['data'].strip()))
+            except StopIteration:
+                self.power, self.toughness = -1,-1
+
+            ## get the mana cost
+            self.cost = dd(lambda: 0)
+            self.cost['X'] = False
+
+            try:
+                res = next(tree.find(lambda x:'id' in x and x['id'] == 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_manaRow'))
+                res = next(res.find(lambda x: x['class'] == 'value'))
+
+                for child in res.__children__:
+                    try:
+                        i = int(child.__fields__['alt'])
+                        self.cost['*'] = i
+                    except:
+                        s = child.__fields__['alt']
+                        if " or " in s:
+                            s = (s[0].lower()) + "/" + (s.split(" ")[2][0].lower())
+                        elif "Phyrexian" in s:
+                            s = s.split(' ')[1]
+                            self.cost['Phyrexian'] += 1
+
+                        elif 'Variable Colorless' == s:
+                            self.cost['X'] = True
+                            continue
+
+                        self.cost[s] += 1
+            except StopIteration:
+                pass
+
+            self.cost = {k: self.cost[k] for k in self.cost}
+
+            ## get the converted cost row
+            res = next(tree.find(lambda x:'id' in x and x['id'] == 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_cmcRow'))
+            res = next(res.find(lambda x: x['class'] == 'value'))
+            self.ccost = int(res.__fields__['data'].strip('"').strip())
+
+            ## get the expansion
+            res = next(tree.find(lambda x:'id' in x and x['id'] == "ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_currentSetSymbol"))
+            res = res.__children__[1]
+            self.expansion = res.__fields__['data']
+
+            ## get the rarity
+            res = next(tree.find(lambda x:'id' in x and x['id'] == "ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_rarityRow"))
+            self.rarity = res.__children__[1].__children__[0]['data']
+
+            ## get the rating
+            self.rating = float(
+                           next(
+                            tree.find(
+                             lambda x:'id' in x and x['id'] == 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_currentRating_textRating'))['data'])
+
+            ## get the MUID
+            res = next(tree.find(lambda x:'id' in x and x['id'] == 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_cardImage'))
+            m = re.findall('multiverseid=([0-9]+)', res.__fields__['src'])
+            self.muid = int(m[0])
+
+            ## get the image URL
+            ### a constant string and the MUID
+            self.img = ("http://gatherer.wizards.com/Handlers/Image.ashx?multiverseid=%i&type=card" % self.muid)
+
+            self.keywords = [ k for k in self.__keywords__ if k.lower() in self.text.lower()]
+        except:
+            return tree
+
+
+
+#def test():
+#    from .cardtestdata import __test_html__
+#    for html in __test_html__:
+#        c = Card(None)
+#        c.loadFromGatherer(html)
+#        for k in c.__fields__:
+#            try:
+#                print(k, getattr(c, k))
+#
+#            except Exception as e:
+#                print(k, e)
+#                continue
+#
+#        print(c.export())
+#    return
+#
+#test()
+#

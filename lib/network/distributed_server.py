@@ -75,8 +75,11 @@ class Server(object):
     def stop(self):
         if self.__thread__:
             for t in self.__clients__:
-                t.join()
-                print("Killed thread", t)
+                try:
+                    t.join()
+                    print("Killed thread", t)
+                finally:
+                    pass
             self.__up__ = False
             self.__thread__.join()
             print("Thread killed...")
