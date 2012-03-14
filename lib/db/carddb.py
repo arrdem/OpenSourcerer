@@ -1,11 +1,11 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 from ..cards.card import Card
 
 class CardDB():
     def __init__(self, file='./cards.dat'):
         self.__cards__           = []    # list of Card objects
-        self.__names_to_ind__    = {}    # map of '':Card
+        self.__names_to_inst__   = {}    # map of '':Card
 
         f = open(file,'r')
         for line in f:
@@ -13,7 +13,7 @@ class CardDB():
                 eval("d = "+line)
                 d = Card(None, d)
                 self.__cards__.append(d)
-                self[d.__dict__[u'Card Name:']] =  len(self.__cards__
+                self[d.__dict__['Card Name:']] =  len(self.__cards__
 
             except Exception:
                 continue

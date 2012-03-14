@@ -4,30 +4,34 @@
 from html.parser import HTMLParser
 import re
 
+
 class HTMLTree():
+
     __id_counter__ = 1
+
     def __init__(self, *args, **kwargs):
-        self.__children__   = []
-        self.__fields__     = {'data':'', '_tree_id':int(self.__id_counter__)}
-        self.__parent__     = None
+        self.__children__ = []
+        self.__fields__ = {'data': '', '_tree_id': int(self.__id_counter__)}
+        self.__parent__ = None
         self.__id_counter__ += 1
 
     def __getitem__(self, key):
-        if key in self.__fields__:
-            return self.__fields__[key]
-        else:
-            return None
+        return self.__fields__[key]
 
     def __setitem__(self, key, value):
         self.__fields__[key] = value
 
-    def __str__(self, long = 0):
+    def __str__(self, long=0):
         if(long == 0):
             return self.__fields__['_type']
         elif(long == 1):
             return str(self.__fields__)
         elif(long > 1):
-            self.__fields__['_type'] + "\n".join([str(a) for a in self.__children__])
+            self.__fields__['_type'] +\
+                 "\n".join([str(a) for a in self.__children__])
+
+    def __contains__(self, item):
+        return self.__fields__.__contains__(item)
 
     def find(self, f):
         """
@@ -44,12 +48,16 @@ class HTMLTree():
             for n in c.find(f):
                 yield n
 
-    def join(self, recursive=False, field=lambda x: (x if 'data' not in x else x['data'])):
-        return field(self) + (' '.join([c.join(recursive=True, field=field)
-                                                    for c in self.__children__])
-                                            if recursive else '')
+    def join(self, limit=3,
+                   field=lambda x: (x if 'data' not in x else x['data'])):
+        return field(self) + (' '.join(map(lambda x: x.join(limit=limit-1,
+                                                        field=field),
+                                          self.__children__))
+                              if limit-1 else '')
+
 
 class WebPage(HTMLParser):
+
     def __init__(self, *args, **kwargs):
         HTMLParser.__init__(self, *args, **kwargs)
 

@@ -17,9 +17,9 @@ class connectionThread(threading.Thread):
 
     def __init__(self, conn):
         threading.Thread.__init__(self)
-        self.__conn__   = conn
-        self.__running__= True
-        self.__last__   = 0
+        self.__conn__ = conn
+        self.__running__ = True
+        self.__last__ = 0
         self.__client__ = socket.gethostbyaddr(self.__conn__.getpeername()[0])[0]
 
     def join(self):
@@ -36,51 +36,7 @@ class connectionThread(threading.Thread):
         data = " "
         while self.__running__ and data:
             data = str(self.__conn__.recv(4096), "utf-8")
-            #print("[", self.ident, "] UPKEEP SIGNAL FROM", self.__conn__.getpeername())
-
-            if(ticker >= limit):
-                self.__conn__.send(str("DONE").encode())
-                self.join()
-
-            elif data == "NEXT":
-                ticker += 1
-                self.__last__ = ticker
-                self.__conn__.send(str(ticker).encode())
-
-            elif "FAIL" in data:
-                i = int(re.sub("FAIL ", '', data))
-                #print("[ %30s ] FAILED TO DOWNLOAD DECK ID %i" % (self.__client__,  i))
-
-            elif "OKAY" in data:
-                # this is the signal from the client that a new deck has
-                # been found. Format is as follows:
-                # DECK (bytes)
-                # followed by the pickled dict
-                try:
-                    i = int(re.sub("OKAY ", '', data))
-                    self.__conn__.send('OK'.encode())
-                except:
-                    continue
-
-                deck = None
-                try:
-                    deck = pickle.loads(self.__conn__.recv(i))
-                    self.__conn__.send('1'.encode())
-                except:
-                    self.__conn__.send('0'.encode())
-
-                if deck is not None:
-                    m = {}
-                    for c in deck:
-                        m[c] = deck[c]
-
-                    m['sum'] = len(deck)
-
-                    for c1 in deck:
-                        db.markov.update({'name': c1}, {"$inc": m}, upsert=True)
-
-                    print("[ %30s ] DOWNLOADED DECK %i" % \
-                             (self.__client__, self.__last__))
+            print("[", self.ident, "] SIGNAL FROM", self.__conn__.getpeername())
 
         if(not data):
             print("[ %30s ] NO TRAFFIC, EXITING" % (self.__client__))
@@ -128,20 +84,26 @@ class Server(object):
         else:
             print("Server was not running..")
 
+    def handleNewClient(self, client):
+        print("Client connected from {}.".format(client[1]))
+        c = connectionThread(client[0])
+        self.addHandler(c)
+        c.start()
+
+    def addHandler(self, handler):
+        self.__clients__.append(handler)
+
     def __run__(self):
         print("Awaiting connections. . .")
         while self.__up__:
             try:
-                client      = self.__sock__.accept()
-                print("Client connected from {}.".format(client[1]))
-
-                self.__clients__.append(connectionThread(client[0]))
-                self.__clients__[-1].start()
+                client = self.__sock__.accept()
+                self.handleNewClient(client)
 
             except socket.timeout:
                 continue
 
-if __name__ == "__main__" or 1:
+if __name__ == "__main__":
     global ticker, limit
     ticker = 801914
     limit = 920000

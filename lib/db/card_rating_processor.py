@@ -37,5 +37,5 @@ adj_rating = [ratings[i][2] for i in ratings]
 
 print "raw rating:", avg(raw_ratings),"  ",min(raw_ratings),"  ",max(raw_ratings)
 print "votes     :", avg(votes),"  ",min(votes),"  ",max(votes)
-print "new rating:", avg(adj_rating),"  ",min(adj_rating),"  ",max(adj_rating)
+print "new rating:", avg(adj_rating),"  ",min(adj_rating), "  ", max(adj_rating)
 
