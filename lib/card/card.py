@@ -12,6 +12,7 @@ from ..client import Client
 from ..db.card_parser import *
 from collections import defaultdict as dd
 import re
+import string
 
 class Card(Client):
 
@@ -111,6 +112,7 @@ class Card(Client):
         return {field: getattr(self, field) for field in self.__fields__}
 
     def loadFromGatherer(self, html):
+        html = ''.join([c for c in html if c in string.printable])
         p = WebPage()
         p.feed(html)
         tree = p.__tree_root__
@@ -125,9 +127,10 @@ class Card(Client):
 
         ## get the card's flavor text
         try:
-            res = next(tree.find(lambda x:'id' in x and x['id'] == 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_flavorText'))
+            res = next(tree.find(lambda x:'id' in x and x['id'] == 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_FlavorText'))
             self.flavor_text = res.join().strip()
-        except StopIteration:
+        except StopIteration as e:
+            print(e)
             self.flavor_text = "None"
 
         ## get the card's core text
