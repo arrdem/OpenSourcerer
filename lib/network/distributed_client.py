@@ -17,7 +17,7 @@ class Client(threading.Thread):
         self.__port__ = port
         self.__conn__ = socket.socket()
         self.__conn__.connect((host, port))
-        self.__conn__.settimeout(5.0)
+        self.__conn__.settimeout(2.0)
 
     def join(self):
         self.__running__ = False
@@ -32,8 +32,6 @@ class Client(threading.Thread):
                 m = str(self.__conn__.recv(1024), "utf-8")
                 if m:
                     self.handle(m)
-                else:
-                    self.upkeep()
             except socket.timeout:
                 self.upkeep()
 

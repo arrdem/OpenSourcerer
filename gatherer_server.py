@@ -27,18 +27,25 @@ class GathererThread(connectionThread):
 
         while self.__running__ and data:
             data = str(self.__conn__.recv(4096), "utf-8")
-            if(self.__verbose__): print("[ %30s ] SIGNAL %s" % (self.__client__, data))
+            if(self.__verbose__): print("[ %40s ] SIGNAL %s" % (self.__client__, data))
 
             if data == "NEXT":
                 ticker = generator.next()
                 self.__last__ = ticker
-                self.__conn__.send(str(ticker).encode())
-                if(self.__verbose__): print("[ %30s ] SIGNALING %i" % (self.__client__, ticker))
+                self.__conn__.send(str("PAGEID %i" % (ticker)).encode())
+                if(self.__verbose__): print("[ %40s ] SIGNALING %i" % (self.__client__, ticker))
 
             elif "FAIL" in data:
                 i = int(re.sub("FAIL ", '', data))
-                if(self.__verbose__): print("[ %30s ] FAILED TO DOWNLOAD CARD ID %i" % (self.__client__,  i))
+                if(self.__verbose__): print("[ %40s ] FAILED TO DOWNLOAD CARD ID %i" % (self.__client__,  i))
                 generator.logfail(self.__last__)
+
+            elif "ERROR" in data:
+                print("[ %40s ] %s" % (self.__client__, data))
+
+            elif "FATAL" in data:
+                print("[ %40s ] NODE DOWN" % (self.__client__))
+                self.join()
 
             elif "OKAY" in data:
                 # this is the signal from the client that a new deck has
@@ -48,7 +55,7 @@ class GathererThread(connectionThread):
                 try:
                     i = int(re.sub("OKAY ", '', data))
                     self.__conn__.send('OK'.encode())
-                    if(self.__verbose__): print("[ %30s ] SIGNALING %s" % (self.__client__, "OK"))
+                    if(self.__verbose__): print("[ %40s ] SIGNALING %s" % (self.__client__, "OK"))
                 except Exception as e:
                     if(self.__verbose__): print(e)
                     exit(1)
@@ -57,20 +64,21 @@ class GathererThread(connectionThread):
                 try:
                     deck = pickle.loads(self.__conn__.recv(i))
                     self.__conn__.send('1'.encode())
-                    if(self.__verbose__): print("[ %30s ] SIGNALING %s" % (self.__client__, '1'))
+                    if(self.__verbose__): print("[ %40s ] SIGNALING %s" % (self.__client__, '1'))
                 except:
                     self.__conn__.send('0'.encode())
-                    if(self.__verbose__): print("[ %30s ] SIGNALING %s" % (self.__client__, '0'))
+                    if(self.__verbose__): print("[ %40s ] SIGNALING %s" % (self.__client__, '0'))
 
                 if deck is not None:
                     deck['_id'] = ObjectId()
                     db.cards.insert(deck)
 
-                    print("[ %30s ] DOWNLOADED CARD %i" % \
+                    print("[ %40s ] DOWNLOADED CARD %i" % \
                              (self.__client__, self.__last__))
 
+
         if(not data):
-            print("[ %30s ] NO TRAFFIC, EXITING" % (self.__client__))
+            print("[ %40s ] NO TRAFFIC, EXITING" % (self.__client__))
 
 
 class GathererServer(Server):

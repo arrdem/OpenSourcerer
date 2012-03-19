@@ -35,7 +35,7 @@ class connectionThread(threading.Thread):
         global ticker
         data = " "
         while self.__running__ and data:
-            data = str(self.__conn__.recv(4096), "utf-8")
+            data = str(self.__conn__.recv(4096)).decode("utf-8", errors='ignore')
             #print("[", self.ident, "] UPKEEP SIGNAL FROM", self.__conn__.getpeername())
 
             if(ticker >= limit):
@@ -70,14 +70,10 @@ class connectionThread(threading.Thread):
                     self.__conn__.send('0'.encode())
 
                 if deck is not None:
-                    m = {}
-                    for c in deck:
-                        m[c] = deck[c]
+                    deck['sum'] = sum([deck[i] for i in deck if isinstance(deck[i], int)])
+                    deck['_id'] = str(self.__last__)
 
-                    m['sum'] = len(deck)
-
-                    for c1 in deck:
-                        db.markov.update({'name': c1}, {"$inc": m}, upsert=True)
+                    db.decks.insert(deck)
 
                     print("[ %30s ] DOWNLOADED DECK %i" % \
                              (self.__client__, self.__last__))
@@ -143,9 +139,9 @@ class Server(object):
 
 if __name__ == "__main__" or 1:
     global ticker, limit
-    ticker = 801914
+    ticker = 1
     limit = 920000
     serv = Server()
     serv.run()
-    input()
+    raw_input()
     serv.stop()
