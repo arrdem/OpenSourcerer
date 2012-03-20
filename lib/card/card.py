@@ -112,6 +112,7 @@ class Card(Client):
         return {field: getattr(self, field) for field in self.__fields__}
 
     def loadFromGatherer(self, html):
+        tree = None
         try:
             html = ''.join([c for c in html if c in string.printable])
             p = WebPage()
@@ -233,7 +234,9 @@ class Card(Client):
 
             self.keywords = [ k for k in self.__keywords__ if k.lower() in self.text.lower()]
         except:
-            return tree
+            raise RuntimeError("Failed to load deck")
+        finally:
+            return(tree)
 
 
 
