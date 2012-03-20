@@ -23,42 +23,47 @@ class GathererClient(Client):
         self.__conn__.send("NEXT".encode())
 
     def handle(self, m):
-        i = int(m)
-        text = ""
-        try:
-            text = str(urlopen(Request((self.__tmplate__ % i))).read(), "utf-8")
+        m = m.split(' ',1)
 
-        except HTTPError:
-            self.__conn__.send(("FAIL %i" % i).encode())
-            print("FAILED CARD ID %i, REDIRECT" % i)
-            return
+        if m[0] == 'PAGEID'
+            i = int(m[1])
+            text = ""
+            try:
+                text = str(urlopen(Request((self.__tmplate__ % i))).read(), "utf-8")
 
-        except Exception as e:
-            print(e)
-            exit(1)
+            except HTTPError:
+                self.__conn__.send(("FAIL %i" % i).encode())
+                print("FAILED CARD ID %i, REDIRECT" % i)
+                return
 
-        # the web page downloaded was OKAY
-        print("GOT CARD %i" % (i))
-        text = re.sub(r'', '-', text)
-        c = Card(None)
-        tree = None
-        try:
-            tree = c.loadFromGatherer(text)
-        except:
-            cursor = tree
-            while 1:
-                m = input("DEBUG > ").split()
-                if m[0] == 'l':
-                    print(' '.join(a.__str__() for a in cursor.__children__))
-                elif m[0] == 'g':
-                    cursor = cursor.__children__[int(m[1])]
-                elif m[0] == 'u':
-                    cursor = cursor.__parent__
-                else:
-                    try:
-                        exec(' '.join(m))
-                    except:
-                        continue
+            except Exception as e:
+                print(e)
+                self.__conn__.send(("FATAL %s" % str(e)).encode())
+                self.__conn__.close()
+                self.join()
+
+            # the web page downloaded was OKAY
+            print("GOT CARD %i" % (i))
+            text = re.sub(r'', '-', text)
+            c = Card(None)
+            tree = None
+            try:
+                tree = c.loadFromGatherer(text)
+            except:
+                cursor = tree
+                while 1:
+                    m = input("DEBUG > ").split()
+                    if m[0] == 'l':
+                        print(' '.join(a.__str__() for a in cursor.__children__))
+                    elif m[0] == 'g':
+                        cursor = cursor.__children__[int(m[1])]
+                    elif m[0] == 'u':
+                        cursor = cursor.__parent__
+                    else:
+                        try:
+                            exec(' '.join(m))
+                        except:
+                            continue
 
         b = pickle.dumps(c.export())
         rsp = 0
@@ -78,7 +83,7 @@ class GathererClient(Client):
         time.sleep(self.__delay__)
 
 if __name__ == "__main__" or 1:
-    client = GathererClient("laptop.mckenzielabs.org", 9001)
+    client = GathererClient("127.0.0.1", 9001)
     client.start()
     input()
     client.join()
