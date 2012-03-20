@@ -53,8 +53,8 @@ class GathererThread(connectionThread):
                 # DECK (bytes)
                 # followed by the pickled dict
                 try:
-                    i = int(re.sub("OKAY ", '', data))
-                    self.__conn__.send('OK'.encode())
+                    i = int(data.split(' ',1)[1])
+                    self.__conn__.send('GOAHEAD'.encode())
                     if(self.__verbose__): print("[ %40s ] SIGNALING %s" % (self.__client__, "OK"))
                 except Exception as e:
                     if(self.__verbose__): print(e)

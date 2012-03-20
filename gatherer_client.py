@@ -18,9 +18,14 @@ class GathererClient(Client):
     def __init__(self, *args, **kwargs):
         Client.__init__(self, *args, **kwargs)
         self.__delay__ = 5
+        self.__has_deck__ = False
+        self.__data__ = b''
 
     def upkeep(self):
-        self.__conn__.send("NEXT".encode())
+        if not self.__has_deck__:
+            self.__conn__.send("NEXT".encode())
+        else:
+            self.__conn__.send(("OKAY %i" % len(self.__data__)).encode())
 
     def handle(self, m):
         m = m.split(' ',1)
@@ -30,10 +35,22 @@ class GathererClient(Client):
             text = ""
             try:
                 text = str(urlopen(Request((self.__tmplate__ % i))).read(), "utf-8")
+                print("GOT CARD %i" % (i))
+                text = re.sub(r'', '-', text)
+                c = Card(None)
+                tree = None
+                tree = c.loadFromGatherer(text)
+                self.__data__ = pickle.dumps(c.export())
 
             except HTTPError:
                 self.__conn__.send(("FAIL %i" % i).encode())
                 print("FAILED CARD ID %i, REDIRECT" % i)
+                return
+
+            except RuntimeError as e:
+                msg = "FAILED TO PARSE DECK, '%s'" % str(e)
+                self.__conn__.send(("FAIL %i %s" % (i, msg).encode())
+                print(msg)
                 return
 
             except Exception as e:
@@ -42,34 +59,8 @@ class GathererClient(Client):
                 self.__conn__.close()
                 self.join()
 
-            # the web page downloaded was OKAY
-            print("GOT CARD %i" % (i))
-            text = re.sub(r'', '-', text)
-            c = Card(None)
-            tree = None
-            try:
-                tree = c.loadFromGatherer(text)
-            except:
-                cursor = tree
-                while 1:
-                    m = input("DEBUG > ").split()
-                    if m[0] == 'l':
-                        print(' '.join(a.__str__() for a in cursor.__children__))
-                    elif m[0] == 'g':
-                        cursor = cursor.__children__[int(m[1])]
-                    elif m[0] == 'u':
-                        cursor = cursor.__parent__
-                    else:
-                        try:
-                            exec(' '.join(m))
-                        except:
-                            continue
-
-        b = pickle.dumps(c.export())
-        rsp = 0
-
-        for k in range(10):
-            self.__conn__.send(("OKAY %i" % len(b)).encode())
+        elif m[0] == 'GOAHEAD':
+            self.__conn__.send(self.__data__)
             self.__conn__.recv(128)
             self.__conn__.send(b)
             rsp = int(str(self.__conn__.recv(128), "utf-8"))
