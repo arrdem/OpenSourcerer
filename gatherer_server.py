@@ -44,7 +44,7 @@ class GathererThread(connectionThread):
                 print("[ %40s ] %s" % (self.__client__, data))
 
             elif "FATAL" in data:
-                print("[ %40s ] NODE DOWN" % (self.__client__))
+                print("[ %40s ] NODE DOWN '%s'" % (self.__client__, data))
                 self.join()
 
             elif "OKAY" in data:
@@ -70,11 +70,11 @@ class GathererThread(connectionThread):
                     if(self.__verbose__): print("[ %40s ] SIGNALING %s" % (self.__client__, '0'))
 
                 if deck is not None:
-                    deck['_id'] = ObjectId()
+                    deck['_id'] = str(self.__last__)
                     db.cards.insert(deck)
 
-                    print("[ %40s ] DOWNLOADED CARD %i" % \
-                             (self.__client__, self.__last__))
+                    print("[ %40s ] DOWNLOADED CARD %i : %s" % \
+                             (self.__client__, self.__last__, deck['name']))
 
 
         if(not data):
