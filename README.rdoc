@@ -1,0 +1,44 @@
+= OpenSourcerer
+OpenSourcerer is my name for the repository of database manipulation, web
+crawling and other scripts which I put together during the course of my
+Magic AI research project. Eventually OpenSourcerer will encompas
+everything from magic deck generation (the current point of work) to
+card effect processing and actually playing games.
+
+== Current State
+OpenSourcerer has three main parts at present: the game engine, the 
+database/crawlers and the deck generator. Of these the crawlers and deck
+generator are being actively worked on at present. Hopefully the game engine
+will also get some attention in the near future but it is very low priority.
+
+== ToDo List
+ * Gather more comprehensive statistics on card usage (crawl EM again)
+ * Improve the performance of the deck database downloading tools
+ * Clean downloaded card data to ensure uniqueness of card names
+ * Write, train a neural network to do land choice for generated decks
+ * Write, test cosine similarity calculator for card records
+ * Write, test a way to export Python functions to a database or other record
+
+== ToDone List
+ * Scraped the Gatherer (Wizards official cards database), saved card details
+ * Scraped Essential Magic, got some preliminary deck statistics
+ * Assembled the abstraction layers required for the game engine
+
+== File Overview
+The directly runnable portions of the project are all stored in the root
+directory. There are two client/server pairs here, as well as the prototype
+deck generator. 
+
+ * The client/server pair named "gatherer" is designed to scrape gatherer.wizards.com and retrieve information about every card recorded there.
+ * The client/server pair named essentialmagic scrape essentialmagic.com's deck listings
+ * The deck generator well... does a bad job of generating decks.
+ * The "main.py" file will eventially execute the game engine
+
+== Disclaimer
+This program was hacked together by a college freshman in his spare time. 
+If you use this code for anything important, you are nuts to put it kindly. 
+That said, all code in this project is copyright 2011 Reid McKenzie 
+<rmckenzie92 AT gmail.com>. This code and all other code in the project may 
+be used or re-used for any purpose at all, so long as I am made aware of my 
+contribution.
+

@@ -9,7 +9,10 @@
 #   made aware of my contribution.
 
 import random
-from ..client import Client
+from ..client         import Client
+from ..signal.signal  import Signal
+from ..typedfunction  import *
+
 
 class Player(Client):
     deck        = []
@@ -26,6 +29,7 @@ class Player(Client):
     other.
     """
 
+    @argtypes(Client, Client, list, str, {'life': int})
     def __init__(self, gameinstance, deck, name, life=20):
         Client.__init__(self, gameinstance)
 
@@ -37,6 +41,7 @@ class Player(Client):
         random.shuffle(self.deck)
         #self.draw(n=7)
 
+    @argtypes(Signal)
     def __handle__(self, sig):
         """
         This method is inherited from Client and defines how the Player deals
@@ -47,8 +52,9 @@ class Player(Client):
         pass
 
     def __str__(self):
-        return name, life
+        return(str(self.name) + " " + str(self.life))
 
+    @argtypes({'n': int})
     def draw(self, n=1):
         """
         And just to make things idiot-proof...
@@ -56,6 +62,7 @@ class Player(Client):
         for i in range(n):
             self.hand.append(self.deck.pop())
 
+    @argtypes({'n': int})
     def discard(self, n=1):
         """
         This is a placeholder method which __must__ be provided by any/all
@@ -63,4 +70,3 @@ class Player(Client):
         provided for)
         """
         pass
-

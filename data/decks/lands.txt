@@ -1,5 +1,0 @@
-50 Mountain
-50 Island
-50 Plains
-50 Swamp
-50 Forrest

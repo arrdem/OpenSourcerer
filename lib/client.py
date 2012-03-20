@@ -10,12 +10,14 @@
 
 from .signal.signal import Signal
 
+
 class Client(object):
     __gameinstance__    = None
     """
     Serves to define the basic interface which all game clients will use to
     send a recieve signals.
     """
+
     def __init__(self, gi):
         self.__gameinstance__ = gi
 

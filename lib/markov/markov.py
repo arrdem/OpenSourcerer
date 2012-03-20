@@ -19,7 +19,7 @@ class __MarkovNode__():
     def get(self):
         self.__sum__ = sum([self.__map__[k] for k in self.__map__])
         i = random.randint(0, self.__sum__)
-        #print "[RANDINT]", i, self.__sum__
+        #print("[RANDINT]", i, self.__sum__)
         s = 0
         for k in self.__map__:
             s += self.__map__[k]

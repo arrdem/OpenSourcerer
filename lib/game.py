@@ -14,7 +14,8 @@ from .client        import *
 from .signal.signal import *
 from .signal.turn   import *
 from .player.player import Player
-#TODO add a Player class
+from .typedfunction import *
+
 
 class GameInstance(Client):
     players             = []        # list of all players
@@ -48,6 +49,7 @@ class GameInstance(Client):
             for x in i:
                 yield x
 
+    @argtypes(object, Signal)
     def __handle__(self, sig):
         """
         Overrides the __handle__ method defined by the Client API
@@ -55,26 +57,23 @@ class GameInstance(Client):
         if isinstance(sig, EndPhase):
             pass
 
+    @argtypes(object, Signal)
     def __broadcast__(self, sig):
         for c in self.signal_clients:
             c.signal(sig)
 
+    @argtypes(object, Player)
     def addPlayer(self, p):
-        if(isinstance(p, Player)):
-            self.players.append(p)
-            self.signal_clients.append(p)
-        else:
-            raise TypeError("Can only add players or subclasses thereof")
+        self.players.append(p)
+        self.signal_clients.append(p)
 
+    @argtypes(object, Client)
     def addClient(self, c):
-        if(isinstance(c, Client)):
-            self.signal_clients.append(c)
-        else:
-            raise TypeError("Only clients or subclasses of client can be added")
+        self.signal_clients.append(c)
 
+    @argtypes(object, Signal)
     def sendSignal(self, s):
-        if(isinstance(s, Signal)):
-            self.__sig_stack__.append(s)
+        self.__sig_stack__.append(s)
 
     def run(self):
         """
