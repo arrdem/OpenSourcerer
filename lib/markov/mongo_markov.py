@@ -1,19 +1,15 @@
 #!/usr/bin/env python
-
-from pymongo.connection import Connection
 from .markov import MarkovChain as Markov
 import random
-import time
 
 class MongoMarkovChain(Markov):
-    __last__        = None
-    __db__          = None
-    __table__       = None
 
-    def __init__(self, db, table):
+    def __init__(self, db, table, exp=1):
         Markov.__init__(self)
-        self.__db__ = db
-        self.__table__ = table
+        self.__last__     = None
+        self.__db__       = db
+        self.__table__    = table
+        self.__exp__      = exp
 
     def add(self, a, b, value=1):
         pass
@@ -27,7 +23,9 @@ class MongoMarkovChain(Markov):
 
         else:
             previous = self.__last__
-            i = random.randint(0, int(self.__last__['sum']))
+            ssum = sum([self.__last__[k]**self.__exp__ for k in self.__last__
+                                        if k not in ['name', '_id', 'sum']])
+            i = random.randint(0, int(ssum))
             s = 0
             for k in self.__last__:
                 if k in ['name', '_id', 'sum']:
@@ -35,7 +33,7 @@ class MongoMarkovChain(Markov):
                 else:
                     try:
                         if k in self.__last__:
-                            s += self.__last__[k]
+                            s += self.__last__[k]**self.__exp__
                     except:
 #                        print(repr(k), type(k), "  -  ", self.__last__[k], type(self.__last__[k]))
                         self.__db__[self.__table__].update({'_id': self.__last__['_id']},
