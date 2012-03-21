@@ -10,6 +10,7 @@ import time
 import pickle
 import re
 
+
 class GathererClient(Client):
     __failstrs__ = ["2cb5f52b7de8f981bbe74c8b81faf7a4"]
     __tmplate__ = "http://gatherer.wizards.com/Pages/Card/Details.aspx?multiverseid=%i"
@@ -20,6 +21,7 @@ class GathererClient(Client):
         self.__delay__ = 5
         self.__has_deck__ = False
         self.__data__ = b''
+        self.__d_id__ = 0
 
     def upkeep(self):
         if not self.__has_deck__:
@@ -28,28 +30,30 @@ class GathererClient(Client):
             self.__conn__.send(("OKAY %i" % len(self.__data__)).encode())
 
     def handle(self, m):
-        m = m.split(' ',1)
+        m = m.split(' ', 1)
 
-        if m[0] == 'PAGEID'
-            i = int(m[1])
+        if m[0] == 'PAGEID':
+            self.__d_id__ = int(m[1])
             text = ""
             try:
-                text = str(urlopen(Request((self.__tmplate__ % i))).read(), "utf-8")
-                print("GOT CARD %i" % (i))
-                text = re.sub(r'', '-', text)
+                text = str(urlopen(Request((self.__tmplate__ % self.__d_id__))).read(), "utf-8")
+                print("GOT CARD %i" % (self.__d_id__))
+                text = re.sub(r'—', '-', text)
+#                print(text)
                 c = Card(None)
-                tree = None
-                tree = c.loadFromGatherer(text)
+                c.loadFromGatherer(text)
+                print(c.export())
                 self.__data__ = pickle.dumps(c.export())
+                self.__has_deck__ = True
 
             except HTTPError:
-                self.__conn__.send(("FAIL %i" % i).encode())
-                print("FAILED CARD ID %i, REDIRECT" % i)
+                self.__conn__.send(("FAIL %i" % self.__d_id__).encode())
+                print("FAILED CARD ID %i, REDIRECT" % self.__d_id__)
                 return
 
             except RuntimeError as e:
                 msg = "FAILED TO PARSE DECK, '%s'" % str(e)
-                self.__conn__.send(("FAIL %i %s" % (i, msg).encode())
+                self.__conn__.send(("FAIL %i %s" % (self.__d_id__, msg).encode()))
                 print(msg)
                 return
 
@@ -60,16 +64,21 @@ class GathererClient(Client):
                 self.join()
 
         elif m[0] == 'GOAHEAD':
+            print("GOT GOAHEAD SIGNAL")
+            print(self.__data__)
             self.__conn__.send(self.__data__)
-            self.__conn__.recv(128)
-            self.__conn__.send(b)
-            rsp = int(str(self.__conn__.recv(128), "utf-8"))
-            if(rsp):
-                print("UPLOADED CARD %7i AFTER %2i ATTEMPTS" % (i, k))
-                break
 
-        if(not rsp):
-            print("FAILED TO UPLOAD CARD %7i AFTER 10 ATTEMPTS" % (i))
+        elif m[0] == '1':
+            print("UPLOADED CARD %7i" % (self.__d_id__))
+            self.__has_deck__ = False
+
+        elif m[0] == '0':
+            print("ERROR UPLOADING DECK %i CONTINUING...." % self.__d_id__)
+
+        elif m[0] == 'DONE':
+            print("RECIEVED DONE SIGNAL FROM SERVER")
+            self.__conn__.close()
+            self.join()
 
         time.sleep(self.__delay__)
 

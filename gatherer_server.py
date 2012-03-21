@@ -4,12 +4,9 @@
 from lib.network.distributed_server import Server
 from lib.network.distributed_server import connectionThread
 from pymongo.connection import Connection
-from bson.objectid import ObjectId
 from itertools import chain
 import urllib.request as urllib
 import pickle
-import string
-import time
 import re
 
 
