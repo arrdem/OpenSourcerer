@@ -9,14 +9,13 @@ from collections import defaultdict as bag
 import cProfile
 
 def main():
-    path = "./data/decks/"
     connection = Connection("146.6.213.39")
     db = connection.magic
-    ai = mc(db, "markov")
+    ai = mc(db, "markov", exp=1.2)
 
     deck = []
 
-    for i in range(60):
+    for i in range(100):
         c = ai.get()
         if(isinstance(c, type(""))):
             deck.append(c)
