@@ -12,14 +12,15 @@ generator are being actively worked on at present. Hopefully the game engine
 will also get some attention in the near future but it is very low priority.
 
 == ToDo List
- * Gather more comprehensive statistics on card usage (crawl EM again)
  * Improve the performance of the deck database downloading tools
  * Clean downloaded card data to ensure uniqueness of card names
- * Write, train a neural network to do land choice for generated decks
+ * Train a neural network to do land choice for generated decks
  * Write, test cosine similarity calculator for card records
  * Write, test a way to export Python functions to a database or other record
 
 == ToDone List
+ * Wrote a neural network capable of filling decks with land
+ * Gather more comprehensive statistics on card usage (crawl EM again)
  * Scraped the Gatherer (Wizards official cards database), saved card details
  * Scraped Essential Magic, got some preliminary deck statistics
  * Assembled the abstraction layers required for the game engine
@@ -29,9 +30,10 @@ The directly runnable portions of the project are all stored in the root
 directory. There are two client/server pairs here, as well as the prototype
 deck generator. 
 
- * The client/server pair named "gatherer" is designed to scrape gatherer.wizards.com and retrieve information about every card recorded there.
+ * The client/server pair named "gatherer" is designed to scrape gatherer.wizards.com
  * The client/server pair named essentialmagic scrape essentialmagic.com's deck listings
  * The deck generator well... does a bad job of generating decks.
+ * network_tester.py is a tool for testing the clients and servers by hand
  * The "main.py" file will eventially execute the game engine
 
 == Disclaimer
