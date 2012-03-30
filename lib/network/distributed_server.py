@@ -25,7 +25,7 @@ class connectionThread(threading.Thread):
     def join(self):
         self.__running__ = False
         self.__conn__.send("DONE".encode())
-        print("[ %30s ] Thread killed..." % (self.__client__))
+        #print("[ %30s ] Thread killed..." % (self.__client__))
         try:
             threading.Thread.join(self)
         except:
