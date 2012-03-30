@@ -27,10 +27,13 @@ class GathererThread(connectionThread):
             if(self.__verbose__): print("[ %40s ] SIGNAL %s" % (self.__client__, data))
 
             if data == "NEXT":
-                ticker = generator.next()
-                self.__last__ = ticker
-                self.__conn__.send(str("PAGEID %i" % (ticker)).encode())
-                if(self.__verbose__): print("[ %40s ] SIGNALING %i" % (self.__client__, ticker))
+                try:
+                    ticker = generator.next()
+                    self.__last__ = ticker
+                    self.__conn__.send(str("PAGEID %i" % (ticker)).encode())
+                    if(self.__verbose__): print("[ %40s ] SIGNALING %i" % (self.__client__, ticker))
+                except StopIteration:
+                    self.join()
 
             elif "FAIL" in data:
                 i = int(re.sub("FAIL ", '', data))
