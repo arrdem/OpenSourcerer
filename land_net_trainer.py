@@ -1,95 +1,62 @@
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
-from pybrain.supervised.trainers import BackpropTrainer
-from pybrain.tools.shortcuts import buildNetwork
-from pybrain.datasets import SupervisedDataSet
+from ConfigParser                     import SafeConfigParser
+import McKenzieLib.learning.neuralnet as netlib
+import lib.ai.land_ai as ai
 import pickle
+import sys
 
-__land_format__ = ['Black', 'Blue', 'Green', 'Red', 'White', '*']
-__lands__ = ['Island', 'Swamp', 'Mountain', 'Plains', 'Forrest']
+__lands__      = ['Island', 'Swamp', 'Mountain', 'Plains', 'Forest']
+__cost_types__ = ['Blue', 'Black', 'Red', 'White', 'Green']
 
-def input_vector(deck, db):
-
-    iv = [0] * 19
-    cards = {card: db.findOne({'name': card}) for card in deck}
-
-    cost_types = ['Black', 'Blue', 'Green', 'Red', 'White', '*']
-
-    cost_list = [[card['cost'][type] for card in deck
-                        if type in card['cost']]
-                for type in cost_types]
-
-    sum_costs = [sum(c) for c in cost_list]
-    avg_costs = [sum(c) / len(c) for c in cost_list]
-    percentage_costs = [c / deck['sum'] for c in sum_costs]
-    most_expensive = sorted([cards[c] for c in cards],
-                            key=lambda card: sum([card['cost'][t]
-                                                for t in card['cost']]),
-                            reverse=True)[0]
-
-    return map(float, ([most_expensive['cost'][k]
-                        for k in cost_types if k in most_expensive['cost']] +
-                       avg_costs + percentage_costs +
-                       [deck['sum'] - sum([deck[land] for land in
-                                           __lands__ if land in deck])]))
-
-
-def output_vector(deck):
-    res = []
-    for land in __lands__:
-        if land in deck:
-            res.append(float(deck[land]))
-        else:
-            res.append(0.0)
-    return res
-
-if __name__ == '__main__':
+def main():
     # Land Filler Network Spec
     #   Inputs (conceptual):
     #       Most expensive card, Average cc, percentage split by color,
     #       deck size without lands
+    #   Order
+    #       'Blue', 'Black', 'Red', 'White', 'Green'
     #   Inputs (practical):
-    #       6*float for the most expensive card
-    #       6*float for the average cc
-    #       6*float for percentage split by color
+    #       5*float for the most expensive card    //OLD
+    #       5*float for the average cc
+    #       5*float for percentage split by color
     #       1*float for card count sans lands
-    #   Total: 19 inputs
+    #   Total: 16 inputs
     #
     #   Outputs:
-    #       6*float, one per card type (count of reccomended)
+    #       5*float, one per card type (count of reccomended)
 
-    net = buildNetwork(19,         #INPUT NODES
-                       14,         #HIDDEN NODES
-                       6           #OUTPUTS
-                      )
-    ds = SupervisedDataSet(19,     #INPUT VECTOR SIZE
-                           6       #OUTPUT VECTOR SIZE
-                          )
+    parser = SafeConfigParser()
+    parser.read('settings.ini')
 
-    connection = Connection("146.6.213.39")
-    db = connection.magic
-    cursor = db.decks.find().limit(800)
+    ds = []
 
-    for deck in cursor:
-        ds.addSample(tuple(input_vector(deck)), tuple(output_vector(deck)))
+    for l in open(parser.get('land_net', 'corpus')):
+        try:
+            i, o = map(ai.import_vector, l.split('|'))
+            if i and o:
+                print i, o
+                ds.append((i, o,))
+        except:
+            pass
 
-    trainer = BackpropTrainer(net, ds)
-    trainer.train()
+    net = None
 
-    while 1:
-        cmd = raw_input(">>> ")
-        cmd = cmd.split(' ',1)
+    if '-l' in sys.argv:
+        net = pickle.load(open(parser.get('land_net', 'brain')))
+    else:
+        net = netlib.NN(int(parser.get('land_net', 'insize')),
+                               int(parser.get('land_net', 'hidden')),
+                               int(parser.get('land_net', 'outsize')))
 
-        if cmd[0] == 'fill':
-            try:
-                deck = exec(cmd[1])
-                print(net.activate(input_vector(deck)))
-            except:
-                pass
+    print "CREATED NET WITH DIMENSIONS %i %i %i" % (net.ni, net.nh, net.no)
 
-        if cmd[0] == 'exit':
-            exit(0)
+    print "STARTING TRAINING....."
+    net.train(ds, iterations=int(parser.get('land_net', 'iterations')))
 
-        if cmd[0] == 'save':
-            f = open(cmd[1],'wb')
-            pickle.dump(net, f)
+    f = open(parser.get('land_net', 'brain'),'wb')
+
+    pickle.dump(net, f, 2)
+
+if __name__ == '__main__':
+    main()
