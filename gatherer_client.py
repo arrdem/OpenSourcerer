@@ -38,12 +38,12 @@ class GathererClient(Client):
             try:
                 text = str(urlopen(Request((self.__tmplate__ % self.__d_id__))).read(), "utf-8")
                 print("GOT CARD %i" % (self.__d_id__))
-                text = re.sub(r'—', '-', text)
+                text = re.sub(r'\xe2', '-', text)
 #                print(text)
                 c = Card(None)
                 c.loadFromGatherer(text)
                 print(c.export())
-                self.__data__ = pickle.dumps(c.export())
+                self.__data__ = pickle.dumps(c.export(), 2)
                 self.__has_deck__ = True
 
             except HTTPError:
@@ -83,7 +83,7 @@ class GathererClient(Client):
         time.sleep(self.__delay__)
 
 if __name__ == "__main__" or 1:
-    client = GathererClient("127.0.0.1", 9001)
+    client = GathererClient("europa.icmb.utexas.edu", 9001)
     client.start()
     input()
     client.join()

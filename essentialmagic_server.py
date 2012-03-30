@@ -1,16 +1,20 @@
 #!/usr/bin/env python2
 
 from pymongo.connection import Connection
+from ConfigParser import SafeConfigParser
 import socket
 import threading
 import pickle
-import string
-import time
 import re
 
+global parser
+parser = SafeConfigParser()
+parser.read('settings.ini')
+connection = Connection(parser.get('mongodb', 'server'))
+
 global db
-connection = Connection("146.6.213.39")
-db = connection.magic
+db = None
+exec("db = connection." + parser.get('mongodb', 'db'))
 
 
 class connectionThread(threading.Thread):
@@ -143,8 +147,8 @@ class Server(object):
 
 if __name__ == "__main__" or 1:
     global ticker, limit
-    ticker = 801914
-    limit = 920000
+    ticker = int(parser.get('essentialmagic', 'ticker'))
+    limit = int(parser.get('essentialmagic', 'limit'))
     serv = Server()
     serv.run()
     input()

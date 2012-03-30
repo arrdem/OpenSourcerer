@@ -4,7 +4,6 @@
 from lib.network.distributed_server import Server
 from lib.network.distributed_server import connectionThread
 from pymongo.connection import Connection
-from ConfigParser import SafeConfigParser
 from itertools import chain
 import curses
 import urllib
@@ -12,9 +11,6 @@ import pickle
 import time
 import re
 
-global parser
-parser = SafeConfigParser()
-parser.read('settings.ini')
 
 class GathererThread(connectionThread):
 
@@ -38,7 +34,7 @@ class GathererThread(connectionThread):
             outpad.addstr(self.__cursor_y__,
                           self.__cursor_x__,
                           " %s" % (str(a),))
-        #outpad.border('|', '|')
+        outpad.border('|', '|')
         outpad.refresh()
 
     def send(self, string):
@@ -52,9 +48,8 @@ class GathererThread(connectionThread):
     def run(self):
         global generator
         data = " "
-        connection = Connection(parser.get('mongodb', 'server'))
-        db = None
-        exec('db = connection.' + parser.get('mongodb', 'db'))
+        connection = Connection("146.6.213.39")
+        db = connection.magic
 
         while self.__running__ and data:
             data = str(self.__conn__.recv(1024*32)).decode("utf-8",
@@ -71,10 +66,10 @@ class GathererThread(connectionThread):
                 generator.logfail(self.__last__)
 
             elif "ERROR" in data:
-                self._print("%-100s" % (" %30s %s" % (self.__client__, data)))
+                self._print("%-100s" % (" %40s %s" % (self.__client__, data)))
 
             elif "FATAL" in data:
-                self._print("%-100s" % (" %30s NODE DOWN '%s'" % (self.__client__, data)))
+                self._print("%-100s" % (" %40s NODE DOWN '%s'" % (self.__client__, data)))
                 self.join()
 
             elif "OKAY" in data:
@@ -99,17 +94,17 @@ class GathererThread(connectionThread):
                         card['_id'] = str(self.__last__)
                         db.cards.insert(card)
 
-                        self._print("%-100s" % (" %30s DOWNLOADED CARD %i : %s" % \
+                        self._print("%-100s" % (" %40s DOWNLOADED CARD %i : %s" % \
                                 (self.__client__, self.__last__, card['name'])))
                 else:
                     self.__conn__.send('1'.encode())
                     self.__fail_count__ = 0
                     self.__failures__ += 1
-                    self._print("%-100s" % (" %30s FAILES TO DOWNLOADED CARD %i" % \
+                    self._print("%-100s" % (" %40s FAILES TO DOWNLOADED CARD %i" % \
                                  (self.__client__, self.__last__)))
 
         if(not data):
-            self._print("%-100s" % (" %30s NO TRAFFIC, EXITING" % (self.__client__)))
+            self._print("%-100s" % (" %40s NO TRAFFIC, EXITING" % (self.__client__)))
             self.join()
 
 
@@ -127,7 +122,12 @@ class GathererServer(Server):
         handler.start()
 
 class MUIDItterator():
-    __seed_MIDs__= list(map(int, parser.get('scrape', 'seeds').split(',')))
+    __seed_MIDs__= [
+        108933,191306,80530,45374,191056,39675,19891,2729,1229,178113,97052,
+        198386,87913,220955,100,4807,1923,37909,1239,89019,96936,3371,126294,
+        193511,182270,1665,116747,6550,3315,20225,4851,96873,189272,140183,
+        226589,247358,206343,194208,213792,243464,242485,244335,244332,244330,
+        244325,244320]
 
     def __init__(self):
         self.__used_muids__ = set()
@@ -198,7 +198,7 @@ if __name__ == "__main__":
     curses.setsyx(150, 1)
 
     global outpad
-    outpad = curses.newwin(115, 100, 0, 0)
+    outpad = curses.newwin(40, 100, 0, 0)
     inpad = curses.newwin(40, 50, 0, 101)
 
     inpad.scrollok(True)
@@ -235,4 +235,4 @@ if __name__ == "__main__":
             try:
                 exec(' '.join(cmd))
             except Exception as e:
-                print(e)
+                pprint(inpad, e)
