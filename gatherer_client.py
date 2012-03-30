@@ -6,6 +6,7 @@ from lib.card.card import Card
 from urllib.request import Request
 from urllib.request import urlopen
 from urllib.request import HTTPError
+from configparser import SafeConfigParser
 import time
 import pickle
 import re
@@ -75,6 +76,14 @@ class GathererClient(Client):
         elif m[0] == '0':
             print("ERROR UPLOADING DECK %i CONTINUING...." % self.__d_id__)
 
+        elif m[0] == 'RECONNECT':
+            HOST, PORT = self.__conn__.getpeername(), 9001
+            self.__conn__.close()
+            time.sleep(int(m[1]))
+            self.__conn__ = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.__conn__.bind((HOST, PORT))
+
+
         elif m[0] == 'DONE':
             print("RECIEVED DONE SIGNAL FROM SERVER")
             self.__conn__.close()
@@ -84,7 +93,6 @@ class GathererClient(Client):
 
 if __name__ == "__main__" or 1:
     client = GathererClient("europa.icmb.utexas.edu", 9001)
-    client.start()
-    input()
-    client.join()
+    client.daemon = False
+    client.run()
 
