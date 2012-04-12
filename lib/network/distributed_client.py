@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import threading
 import socket
-import string
+
 
 class Client(threading.Thread):
     """
