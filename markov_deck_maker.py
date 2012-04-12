@@ -4,13 +4,18 @@
 #  markovdeck.py
 
 from lib.markov.mongo_markov import MongoMarkovChain as mc
-from pymongo.connection import Connection
-from collections import defaultdict as bag
-import cProfile
+from pymongo.connection      import Connection
+from collections             import defaultdict as bag
+from configparser            import SafeConfigParser
 
 def main():
-    connection = Connection("146.6.213.39")
-    db = connection.magic
+    parser = SafeConfigParser()
+    parser.read('settings.ini')
+
+    connection = Connection(parser.get('mongodb', 'server'))
+    db = None
+    exec('db = connection.' + parser.get('mongodb', 'db'))
+
     ai = mc(db, "markov", exp=1.2)
 
     deck = []
