@@ -6,9 +6,8 @@ from pymongo.connection import Connection
 from configparser import SafeConfigParser
 import threading
 import socket
-import pickle
-import os
-import re
+import json
+import time
 
 
 class ListenerThread(threading.Thread):
@@ -55,29 +54,24 @@ class TournamentThread(connectionThread):
     """
     def __init__(self, *args, **kwargs):
         connectionThread.__init__(self, *args, **kwargs)
-
-        self.__grammar__ = re.Scanner([
-            (r'(?<=DONE )(1|0)', lambda x, y: ('DONE', y, self.__logwin__)),
-            (r'NEXT', lambda x, y: ('NEXT', y, self.__next__)),
-            (r'(?<=ERROR )((RECV)|(RUN))', lambda x, y: ('ERROR', y,
-                                                         self.__err__)),
-            ])
-
-        # the IDs of the decks being evaluated on the client
-        self.__a__ = None
-        self.__b__ = None
+        self.__a__ = None    # ID number of deck A
+        self.__b__ = None    # ID number of deck B
 
         self.__queue__ = []
+        self.__listener__ = ListenerThread(self.__conn__, self.__queue__)
+
+        global population
+        self.population = population
 
     def __logwin__(self, id):
         """
         Used to record which deck won the series
         """
-        global population
+
         if(id == 0):
-            population.logGame(self.__a__, self.__b__)
+            self.population.logGame(self.__a__, self.__b__)
         elif(id == 1):
-            population.logGame(self.__b__, self.__a__)
+            self.population.logGame(self.__b__, self.__a__)
         else:
             raise Exception("Unexpexted value in __logwin__: %i" % (id))
 
@@ -85,7 +79,69 @@ class TournamentThread(connectionThread):
         """
         Used to generate and send the next pair of decks to the client.
         """
+        pass
 
+    def run(self):
+        self.__listener__.start()
+        while self.__running__:
+            if(self.__queue__):
+                self.handle(self.__queue__.pop())
+            else:
+                time.sleep(1)
+
+    def handle(self, data):
+        """
+        Basically just a big switch/case on the first word of the data which
+        determines how the process deals with the data
+        """
+        data = data.split(' ', 1)
+        head, tail = data[0], data[1]
+
+        # first those signals which the client can send
+        if(head == 'ERROR'):
+            # the client reports a failure...
+            print("[ %30s ] Error Reported: '%s'" %
+                    (self.__client__, tail))
+
+        elif(head == 'NEXT'):
+            # the client requests a new pair of decks
+            self.__a__, self.__b__ = next(self.population)
+
+        elif(head == 'RESULTS'):
+            # the client has results regarding two decks
+
+
+        elif(head == 'GET'):
+            # the client needs the data which comprises a deck
+            which = int(tail)
+            if(which == 1):
+                self.__conn__.send(
+                    json.dumps(
+                        self.population.get(
+                            self.__a__)).encode())
+
+            if(which == 2):
+                self.__conn__.send(
+                    json.dumps(
+                        self.population.get(
+                            self.__b__)).encode())
+            else:
+                pass
+
+        # now those signals which the controller can send...
+        elif(head == 'KILL'):
+            # this is a user-sent signal to end the thread and kill the client
+            pass
+
+        elif(head == 'RECONNECT'):
+            # this is a user-sent signal which will cause all clients to sleep
+            # and then attempt to reconnect to the same server.
+            pass
+
+        # finally, if all else fails,
+        else:
+            print("[ %30s ] Error: failed to handle signal '%s'" %
+                    (self.__client__, head.upper()))
 
 
 class TournamentServer(Server):
@@ -104,9 +160,9 @@ if __name__ == '__main__':
     parser.read('settings.ini')
 
     connection = Connection(parser.get('mongodb', 'server'))
+    global db
     db = None
     exec('db = connection.' + parser.get('mongodb', 'db'))
-
     global population
 
 

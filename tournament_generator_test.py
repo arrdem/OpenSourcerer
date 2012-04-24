@@ -26,5 +26,10 @@ while True:
                     break
                 else:
                     continue
+<<<<<<< HEAD
     except:
         pass
+=======
+    except Exception as e:
+        print(e)
+>>>>>>> retardation

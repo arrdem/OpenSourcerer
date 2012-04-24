@@ -60,8 +60,3 @@ class Deck:
         types = bag(lambda: 0)
         for c in cards:
             types[c["types"][0]] += 1
-
-
-
-
-

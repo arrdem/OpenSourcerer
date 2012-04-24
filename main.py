@@ -8,7 +8,7 @@
 #   or re-used for any purpose at all, so long as I am
 #   made aware of my contribution.
 from lib.game              import GameInstance as GI
-from lib.player.player   , import Player
+from lib.player.player     import Player
 from lib.signal.event      import *
 from lib.signal.turn       import *
 import re

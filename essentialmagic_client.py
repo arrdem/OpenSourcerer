@@ -1,7 +1,7 @@
 #!/usr/bin/env python2
 
+from ConfigParser import SafeConfigParser
 import socket
-import string
 import time
 import urllib.request as urllib
 import hashlib
@@ -39,10 +39,15 @@ def parse(s):
     return deck
 
 if __name__ == "__main__" or 1:
-    address = ("europa.icmb.utexas.edu", 9001)
+    parser = SafeConfigParser()
+    parser.read('settings.ini')
+
+    address = (parser.get('scrape', 'master'),
+               int(parser.get('scrape', 'port')))
+
     conn = socket.socket()
     conn.connect(address)
-    delay = 8
+    delay = int(parser.get('scrape', 'delay'))
 
     tmplate = "http://essentialmagic.com/Decks/ExportToApprentice.asp?ID=%i"
 

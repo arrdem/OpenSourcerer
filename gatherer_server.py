@@ -4,12 +4,9 @@
 from lib.network.distributed_server import Server
 from lib.network.distributed_server import connectionThread
 from pymongo.connection             import Connection
-from bson.objectid                  import ObjectId
 from itertools                      import chain
 import urllib.request as urllib
 import pickle
-import string
-import time
 import re
 
 
@@ -31,11 +28,13 @@ class GathererThread(connectionThread):
                                          (self.__client__, data))
 
             if data == "NEXT":
-                ticker = generator.next()
-                self.__last__ = ticker
-                self.__conn__.send(str("PAGEID %i" % (ticker)).encode())
-                if(self.__verbose__): print("[ %40s ] SIGNALING %i" %
-                                            (self.__client__, ticker))
+                try:
+                    ticker = generator.next()
+                    self.__last__ = ticker
+                    self.__conn__.send(str("PAGEID %i" % (ticker)).encode())
+                    if(self.__verbose__): print("[ %40s ] SIGNALING %i" % (self.__client__, ticker))
+                except StopIteration:
+                    self.join()
 
             elif "FAIL" in data:
                 i = int(re.sub("FAIL ", '', data))

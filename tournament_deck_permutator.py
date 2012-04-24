@@ -13,7 +13,7 @@ exec('db = connection.' + parser.get('mongodb', 'db'))
 
 def is_card_related(card, db):
     """
-    Uses some heuristics and the Mongo db to determine whether the card in
+    Uses some heuristics and the Mongo DB to determine whether the card in
     question is or is not strongly correlated.
     """
     pass

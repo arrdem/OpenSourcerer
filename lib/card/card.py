@@ -109,7 +109,7 @@ class Card(Client):
         self.__record__[key] = value
 
     def export(self):
-        return {field: getattr(self, field) for field in self.__fields__}
+        return {field:self.__dict__[field] for field in self.__fields__}
 
     def loadFromGatherer(self, html):
         tree = None
