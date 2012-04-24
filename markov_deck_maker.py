@@ -9,7 +9,7 @@ from collections import defaultdict as bag
 import cProfile
 
 def main():
-    connection = Connection("146.6.213.39")
+    connection = Connection("europa.icmb.utexas.edu")
     db = connection.magic
     ai = mc(db, "markov", exp=1.2)
 
