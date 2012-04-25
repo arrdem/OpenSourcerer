@@ -27,6 +27,7 @@ if __name__ == '__main__':
         print('-'*20)
         ai.print_output_vector(net.activate(iv))
         exit(0)
+
     else:
         while True:
             i = raw_input()

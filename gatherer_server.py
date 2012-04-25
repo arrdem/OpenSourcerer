@@ -3,8 +3,8 @@
 
 from lib.network.distributed_server import Server
 from lib.network.distributed_server import connectionThread
-from pymongo.connection import Connection
-from itertools import chain
+from pymongo.connection             import Connection
+from itertools                      import chain
 import urllib.request as urllib
 import pickle
 import re
@@ -24,7 +24,8 @@ class GathererThread(connectionThread):
 
         while self.__running__ and data:
             data = str(self.__conn__.recv(4096), "utf-8")
-            if(self.__verbose__): print("[ %40s ] SIGNAL %s" % (self.__client__, data))
+            if(self.__verbose__): print("[ %40s ] SIGNAL %s" %
+                                         (self.__client__, data))
 
             if data == "NEXT":
                 try:
@@ -37,7 +38,8 @@ class GathererThread(connectionThread):
 
             elif "FAIL" in data:
                 i = int(re.sub("FAIL ", '', data))
-                if(self.__verbose__): print("[ %40s ] FAILED TO DOWNLOAD CARD ID %i" % (self.__client__,  i))
+                if(self.__verbose__): print("[ %40s ] FAILED TO DOWNLOAD CARD ID %i" %
+                                                     (self.__client__,  i))
                 generator.logfail(self.__last__)
 
             elif "ERROR" in data:

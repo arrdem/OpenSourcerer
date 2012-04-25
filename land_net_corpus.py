@@ -17,7 +17,7 @@ if __name__ == '__main__':
     db = None
     exec('db = connection.' + parser.get('mongodb', 'db'))
 
-    f = open(parser.get('land_net', 'corpus')+'.'+sys.argv[1], 'w')
+    f = open(parser.get('land_net', 'corpus') + '.' + sy.argv[1], 'w'))
 
     lim = {'$gt': 8}
     count_per_type = int(sys.argv[1])
@@ -37,7 +37,7 @@ if __name__ == '__main__':
     for d in cursor:
         try:
             i, o = ai.input_vector(d, db), ai.output_vector(d)
-            f.write(ai.export_vector(i)+'|'+ai.export_vector(o)+'\n')
+            f.write(ai.export_vector(i) + '|' + ai.export_vector(o) + '\n')
             print c
             c += 1
         except Exception as e:
