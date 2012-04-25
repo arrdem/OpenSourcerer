@@ -4,21 +4,17 @@
 from lib.network.distributed_server import Server
 from lib.network.distributed_server import connectionThread
 from pymongo.connection import Connection
-from configparser import SafeConfigParser
+from ConfigParser import SafeConfigParser
 from itertools import chain
 import mechanize
 import curses
-import pickle
+import json
 import time
 import sys
 import re
 
-global parser
-parser = SafeConfigParser()
-parser.read('settings.ini')
 
 class GathererThread(connectionThread):
-
     def __init__(self, conn):
         connectionThread.__init__(self, conn)
         self.__verbose__ = False
@@ -39,16 +35,15 @@ class GathererThread(connectionThread):
             outpad.addstr(self.__cursor_y__,
                           self.__cursor_x__,
                           ' '.join(map(str, args)))
+            refresh()
         except:
             pass
 
     def join(self):
+        global __active_hosts__
+        __active_hosts__ -= 1
         self.__running__ = False
-        self.status()
-        try:
-            connectionThread.join(self)
-        finally:
-            exit(0)
+        connectionThread.join(self)
 
     def send(self, string):
         self.__conn__.send(string.decode())
@@ -66,7 +61,7 @@ class GathererThread(connectionThread):
         exec("db = connection." + parser.get('mongodb', 'db'))
 
         while self.__running__ and data:
-            data = str(self.__conn__.recv(1024*32)).decode("utf-8",
+            data = str(self.__conn__.recv(1024 * 32)).decode("utf-8",
                                                             errors='ignore')
             self.status()
 
@@ -83,20 +78,21 @@ class GathererThread(connectionThread):
                 self._print("%-100s" % (" %35s %s" % (self.__client__, data)))
 
             elif "FATAL" in data:
-                self._print("%-100s" % (" %35s NODE DOWN '%s'" % (self.__client__, data)))
+                self._print("%-100s" %
+                            (" %35s NODE DOWN '%s'" % (self.__client__, data)))
                 self.join()
 
             elif "OKAY" in data:
                 if(self.__fail_count__ < self.__fail_limit__):
                     try:
-                        i = int(data.split(' ',1)[1])
+                        i = int(data.split(' ', 1)[1])
                         self.__conn__.send('GOAHEAD'.encode())
                     except Exception:
                         exit(1)
 
                     card = None
                     try:
-                        card = pickle.loads(self.__conn__.recv(i))
+                        card = json.loads(self.__conn__.recv(i))
                         self.__fail_count__ = 0
                         self.__conn__.send('1'.encode())
                         self.__count__ += 1
@@ -106,51 +102,64 @@ class GathererThread(connectionThread):
 
                     if card is not None:
                         card['_id'] = str(self.__last__)
+
                         db.cards.insert(card)
 
-                        self._print("%-100s" % (" %35s DOWNLOADED CARD %8i : %s" % \
+                        global __card_count__
+                        __card_count__ += 1
+
+                        self._print("%-100s" %
+                            (" %35s DOWNLOADED CARD %8i : %s" % \
                                 (self.__client__, self.__last__, card['name'])))
+
                 else:
                     self.__conn__.send('1'.encode())
                     self.__fail_count__ = 0
                     self.__failures__ += 1
-                    #self._print("%-100s" % (" %35s FAILED TO DOWNLOADED CARD %8i" % \
-                    #             (self.__client__, self.__last__)))
+                    self._print("%-100s" %
+                            (" %35s FAILED TO DOWNLOADED CARD %8i" % \
+                                 (self.__client__, self.__last__)))
 
         if(not data):
-            self._print("%-100s" % (" %35s NO TRAFFIC, EXITING" % (self.__client__)))
+            self._print("%-100s" %
+                            (" %35s NO TRAFFIC, EXITING" %
+                                (self.__client__)))
             self.join()
 
-class GathererServer(Server):
 
+class GathererServer(Server):
     def __init__(self, *args, **kwargs):
         Server.__init__(self, *args, **kwargs)
 
     def handleNewClient(self, client):
-        global clients
+        global clients, __active_hosts__
         #print "Client connected from {}.".format(client[1])
         handler = GathererThread(client[0])
         handler.daemon = False
         clients[handler.__client__] = handler
         self.addHandler(handler)
         handler.start()
+        __active_hosts__ += 1
+
 
 class MUIDItterator():
-    __seed_MIDs__= list(map(int, parser.get('gatherer', 'seeds').split(',')))
-
     def __init__(self):
+        global parser
+        self.__seed_MIDs__ = list(
+                              map(int,
+                                  parser.get('gatherer', 'seeds').split(',')))
+
         self.__used_muids__ = set()
         self.__last_muid__ = None
         self.__last_random_muid__ = None
         self.__delta__ = -1
         self.__fail_count__ = 0
         self.__fail_limit__ = 25
-        self.__limit__ = 500
+        self.__limit__ = 1000
         self.__last__ = 0
         self.__gen__ = chain(self.__seed_MIDs__, self.getRandomMUID())
         self.__browser__ = mechanize.Browser()
         self.__browser__.addheaders = [('User-agent', 'Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.0.1) Gecko/2008071615 Fedora/3.0.1-1.fc9 Firefox/3.0.1')]
-
 
     def __iter__(self):
         return self.__last__
@@ -169,7 +178,8 @@ class MUIDItterator():
             else:
                 self.__last__ = n
 
-        elif(self.__fail_count__ >= self.__fail_limit__) and (not self.__delta__):
+        elif((self.__fail_count__ >= self.__fail_limit__) and
+             (not self.__delta__)):
             self.__fail_count__ = 0
             self.__last__ = self.__last_muid__ + 1
             self.__delta__ = 1
@@ -181,13 +191,12 @@ class MUIDItterator():
         self.__used_muids__.add(self.__last__)
         return self.__last__
 
-
     def getRandomMUID(self):
         c = 0
         while 1:
             self.__browser__.open("http://gatherer.wizards.com/Pages/Card/Details.aspx?action=random")
             s = self.__browser__.geturl()
-            i = int(s.split('=',1)[1])
+            i = int(s.split('=', 1)[1])
             #print "GOT INDEX", i
             if i not in self.__used_muids__:
                 yield i
@@ -197,26 +206,39 @@ class MUIDItterator():
                 c += 1
 
 
-global __linecount__
-__linecount__ = 0
+def refresh():
+    global outpad, inpad
+    for pad in [inpad, outpad]:
+        pad.refresh()
+    curses.doupdate()
+
 
 def pprint(pad, *args):
     global __linecount__
-    if __linecount__ > 39:
-        pad.addstr(0, 0, ' '*(max_x-100)+'\n'*40)
+    if(__linecount__ > 39):
+        pad.addstr(0, 0, ' ' * (max_x - 100) + '\n' * 40)
         pad.addstr(0, 0, '')
         __linecount__ = 0
 
     for a in args:
         pad.addstr(" %s" % (str(a),))
     pad.addstr('\n')
-    #pad.border('|', '|')
-    pad.refresh()
+    refresh()
     __linecount__ += 1
 
 
 if __name__ == "__main__":
     sys.stderr = open('/dev/null', 'w')
+
+    global __linecount__, __card_count__, __active_hosts__
+    __linecount__ = 0
+    __card_count__ = 0
+    __active_hosts__ = 0
+
+    global parser
+    parser = SafeConfigParser()
+    parser.read('settings.ini')
+
     global generator
     generator = MUIDItterator()
 
@@ -227,9 +249,9 @@ if __name__ == "__main__":
 
     global outpad, max_y, max_x
     max_y, max_x = stdscr.getmaxyx()
-    print (max_x, max_y)
-    outpad = curses.newwin(200, 100, 0, 0)
-    inpad = curses.newwin(40, max_x - 100, 0, 101)
+    print  max_x, max_y
+    outpad = curses.newwin(max_y, 100, 0, 0)
+    inpad = curses.newwin(500, max_x - 100, 0, 101)
 
     inpad.scrollok(True)
     inpad.idlok(True)
@@ -250,9 +272,9 @@ if __name__ == "__main__":
     while 1:
         try:
             inpad.addstr(' $ ')
-            #inpad.border('|', '|')
             inpad.refresh()
-            cmd = str(inpad.getstr()).decode('utf-8', errors='ignore').split(' ')
+            cmd = str(inpad.getstr()).decode('utf-8',
+                                             errors='ignore').split(' ')
 
             if cmd[0] == 'send':
                 if cmd[1] in clients:
@@ -274,11 +296,11 @@ if __name__ == "__main__":
 
             elif cmd[0] == 'upgrade':
                 for c in clients:
-                    clients[c].send('RECONNECT %s' % (cmd[1] if len(cmd) > 1 else '60'))
+                    clients[c].send('RECONNECT %s' %
+                                     (cmd[1] if len(cmd) > 1 else '60'))
                 pprint(inpad, ' ready to upgrade...')
                 serv.stop()
                 curses.endwin()
-                import sys
                 sys.exit(0)
                 break
 
@@ -291,6 +313,28 @@ if __name__ == "__main__":
                 curses.endwin()
                 exit(0)
                 break
+
+            elif cmd[0] == 'refresh':
+                refresh()
+
+            elif cmd[0] == 'count':
+                if cmd[1] == 'hosts':
+                    pprint(inpad, str(len(clients)))
+                elif cmd[1] == 'cards':
+                    pprint(inpad, str(__card_count__))
+                elif cmd[1] == 'active':
+                    pprint(inpad, str(__active_hosts__))
+                else:
+                    pprint(inpad, "sorry, don't know how to count that.")
+
+            elif cmd[0] == 'clear':
+                if cmd[1] == 'input':
+                    inpad.erase()
+                elif cmd[1] == 'output':
+                    outpad.erase()
+                else:
+                    pprint(inpad, "sorry, don't know how to clear that buffer.")
+                refresh()
 
             else:
                 try:
